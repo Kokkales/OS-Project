@@ -7,7 +7,7 @@
 void childJob();
 int main(int argc,char** argv){
 
-  printf("WELCOME TO MY PROGRAMM-----TESTING GIT\n\n");
+  
   //1. Parent process creates multiple child process
   int numOfChildren=10;
   int pids[numOfChildren];
