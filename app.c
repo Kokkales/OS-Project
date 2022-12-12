@@ -56,6 +56,7 @@ int main(int argc,char** argv){
   }
   char buf[30];
   sprintf(buf, "Parent process:%d\n", getpid());
+
   int sz = write(fd, buf, strlen(buf));
   printf("Process with PID: %d executed succesfully!\n",getpid());
   close(fd);
