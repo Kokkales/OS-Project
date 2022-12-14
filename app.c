@@ -24,7 +24,7 @@ int main(int argc,char** argv){
       perror("Program\n");
   }
   else{
-    // printf("File opened succesfyully!!\n");
+    printf("File opened succesfyully!!\n");
   }
 
 
