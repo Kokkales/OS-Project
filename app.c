@@ -25,12 +25,9 @@ int main(int argc,char** argv){
       printf("Error Number % d\n", errno);
       perror("Program\n");
   }
-  else{
-    printf("File opened succesfyully!!\n");
-  }
 
 
-  sprintf(buf, "Parent process:%d\n", getpid());
+  sprintf(buf, "Parent process : %d\n", getpid());
   sz = write(fd, buf, strlen(buf));
 
   //Parent process creates multiple child process
@@ -55,6 +52,6 @@ int main(int argc,char** argv){
 
 void childJob(int fd){
   char buf[30];
-  sprintf(buf, "Child process:%d\n", getpid());
+  sprintf(buf, "Child process : %d\n", getpid());
   int sz = write(fd, buf, strlen(buf));
 }
