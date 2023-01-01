@@ -43,6 +43,14 @@ int main(int argc,char** argv){
     }
     else{ //Parent process
       cpid = waitpid(-1, &status, 0);
+      if (WIFEXITED(status)){ //child ended properly
+            printf("Child ended normally. Exit code is %d\n",WEXITSTATUS(status));
+        }else if(WIFSIGNALED(status)){ //child ended because a signal
+            printf("Child ended because of an uncaught signal, signal = %d\n",WTERMSIG(status));
+        }else if (WIFSTOPPED(status)){ //child stopped
+            printf("Child process has stopped, signal code = %d\n",WSTOPSIG(status));
+            exit(EXIT_SUCCESS);
+        }
     }
   }
   close(fd);
