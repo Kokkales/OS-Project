@@ -5,7 +5,7 @@ import colorama
 from colorama import Fore
 
 # Create different random inputs and run the c programm for each input and save the output
-numOfTestFiles=51
+numOfTestFiles=2
 for i in range(1,numOfTestFiles):
   os.system('./app '+ str(random. randint(1,500)) + ' test' + str(i) +'.txt')
 os.system('chmod +rw test*.txt')

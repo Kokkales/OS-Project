@@ -10,29 +10,19 @@
 void childJob(int fd);
 int main(int argc,char** argv){
 
-  int numOfChildren=atoi(argv[1]);
-  int pids[numOfChildren];
-  int status;
-  int i;
-  int cpid;
-  int sz;
+  int numOfChildren=atoi(argv[1]) , sz , status , i , fd;
+  pid_t cpid , pids[numOfChildren];
   char buf[30];
 
-// parent and child communication messages
-int pipefds1[2], pipefds2[2];
-int returnstatus1, returnstatus2;
-char readmessage[20];
-  char pipe1writemessage[20] = "Hello Child!";
-   char pipe2writemessage[20] = "Hello Father!";
+  int pipefds1[2], pipefds2[2] , firstPipeStatus , secondPipeStatus;
+  char readMessage[20] , firstPipeMessage[20] = "Hello Child!" , secondPipeMessage[20] = "Hello Father!";
 
-
-  int fd = open(argv[2], O_RDWR | O_CREAT);
+  fd = open(argv[2], O_RDWR | O_CREAT);
   if (fd ==-1)
   {
       printf("Error Number % d\n", errno);
       perror("Program\n");
   }
-
 
   sprintf(buf, "Parent process : %d\n", getpid());
   sz = write(fd, buf, strlen(buf));
@@ -40,13 +30,14 @@ char readmessage[20];
   //Parent process creates multiple child process
   for(i=0;i<numOfChildren;i++){
     // Create pipes for each child
-    if (returnstatus1 == -1) {
+    firstPipeStatus = pipe(pipefds1); //fixme -> pipe is not created
+    if (firstPipeStatus == -1) {
       printf("Unable to create pipe 1 \n");
       return 1;
    }
-   returnstatus2 = pipe(pipefds2);
+   secondPipeStatus = pipe(pipefds2);
 
-   if (returnstatus2 == -1) {
+   if (secondPipeStatus == -1) {
       printf("Unable to create pipe 2 \n");
       return 1;
    }
@@ -59,20 +50,20 @@ char readmessage[20];
       childJob(fd);
       close(pipefds1[1]); // Close the unwanted pipe1 write side
       close(pipefds2[0]); // Close the unwanted pipe2 read side
-      read(pipefds1[0], readmessage, sizeof(readmessage));
-      printf("In Child: Reading from pipe 1 – Message is %s\n", readmessage);
-      printf("In Child: Writing to pipe 2 – Message is %s\n", pipe2writemessage);
-      write(pipefds2[1], pipe2writemessage, sizeof(pipe2writemessage));
+      read(pipefds1[0], readMessage, sizeof(readMessage));
+      printf("In Child: Reading from pipe 1 – Message is %s\n", readMessage);
+      printf("In Child: Writing to pipe 2 – Message is %s\n", secondPipeMessage);
+      write(pipefds2[1], secondPipeMessage, sizeof(secondPipeMessage));
       exit(EXIT_SUCCESS);
     }
     else{ //Parent process
       cpid = waitpid(-1, &status, 0);
       close(pipefds1[0]); // Close the unwanted pipe1 read side
       close(pipefds2[1]); // Close the unwanted pipe2 write side
-      printf("In Parent: Writing to pipe 1 – Message is %s\n", pipe1writemessage);
-      write(pipefds1[1], pipe1writemessage, sizeof(pipe1writemessage));
-      read(pipefds2[0], readmessage, sizeof(readmessage));
-      printf("In Parent: Reading from pipe 2 – Message is %s\n", readmessage);
+      printf("In Parent: Writing to pipe 1 – Message is %s\n", firstPipeMessage);
+      write(pipefds1[1], firstPipeMessage, sizeof(firstPipeMessage));
+      read(pipefds2[0], readMessage, sizeof(readMessage));
+      printf("In Parent: Reading from pipe 2 – Message is %s\n", readMessage);
       if (WIFEXITED(status)){ //child ended properly
             printf("Child ended normally. Exit code is %d\n",WEXITSTATUS(status));
         }else if(WIFSIGNALED(status)){ //child ended because a signal
@@ -81,6 +72,8 @@ char readmessage[20];
             printf("Child process has stopped, signal code = %d\n",WSTOPSIG(status));
             exit(EXIT_SUCCESS);
         }
+        close(pipefds2[0]); // Close the unwanted pipe1 read side
+        close(pipefds1[1]); // Close the unwanted pipe2 write side
     }
   }
   close(fd);
