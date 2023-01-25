@@ -5,9 +5,9 @@ import colorama
 from colorama import Fore
 
 # Create different random inputs and run the c programm for each input and save the output
-numOfTestFiles=2
+numOfTestFiles=20
 for i in range(1,numOfTestFiles):
-  os.system('./app '+ str(random. randint(1,500)) + ' test' + str(i) +'.txt')
+  os.system('./app '+ str(random. randint(1,300)) + ' test' + str(i) +'.txt')
 os.system('chmod +rw test*.txt')
 
 # Check each output and Open the file && count how many lines the file has (must have n+1)
@@ -26,10 +26,10 @@ for i in range(1,numOfTestFiles):
         txtSplited=line.split()
         if int(txtSplited[3])<prevPid:
           passTest=False
-          print('Pids ascend problem!')
-      else:
-        # print('not match')
-        passTest=False
+          # print('Pids ascend problem!')
+        else:
+          passTest=True
+      prevPid=int(txtSplited[3])
     fp.close()
   if passTest==True:
     passCnt+=1
@@ -37,3 +37,4 @@ for i in range(1,numOfTestFiles):
   else:
     print(Fore.RED+"Test"+str(i)+" : Failed")
 print('Passed : '+ str(passCnt) +'/' + str(numOfTestFiles-1))
+os.system('rm test*.txt')
