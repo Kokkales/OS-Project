@@ -4,6 +4,9 @@ import random
 import colorama
 from colorama import Fore
 
+# compile the program
+os.system('gcc -o app app.c')
+
 # Create different random inputs and run the c programm for each input and save the output
 numOfTestFiles=20
 for i in range(1,numOfTestFiles):
@@ -37,4 +40,3 @@ for i in range(1,numOfTestFiles):
   else:
     print(Fore.RED+"Test"+str(i)+" : Failed")
 print('Passed : '+ str(passCnt) +'/' + str(numOfTestFiles-1))
-os.system('rm test*.txt')
