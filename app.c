@@ -6,36 +6,42 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-//TODO 2. add each child to sleep random time from 3 to 20 seconds
-//TODO 3. create a struct which saves the pid and the availability of the child
+#include <time.h>
+#include <signal.h>
+
 //TODO 4. add signal handling and correct termination of the children
-// worker pool is ready
 
 
-//I create a struct that saves the PID,the status and the function that executes
-//So now i can handle which child will be executed
-// struct Child{
-//   pid_t childPID;
-//   int isAvaailable=1; //1 means available , 0 means not available
-//   void (*runMe)(); // a function that makes the child to do the work
-// }
+//I create a struct that saves the PID,the status and the function that executes so now i can handle which child will be executed
+struct Child{
+  pid_t childPID;
+  int isAvailable; //1 means available , 0 means not available
+  void (*func)(int *pipefds1,int *pipefds2,int fd); // a function that makes the child to do the work
+};
 
-
-void childJob(int pipefds1[2],int pipefds2[2],int fd);
+void childJob(int *pipefds1,int *pipefds2,int fd);
+void onSIGTERM(int sig);
+void killChild(int sig);
 
 int main(int argc,char** argv){
-
   //create a struct to save children process situation
-  // struct Child *children;
-  // children = (struct Child *)malloc(n * sizeof(struct Child));
-  // if (children == NULL) {
-  //       perror("Memory allocation failed");
-  //       exit(1);
-  // }
+  struct Child *children;
+  if (children == NULL) {
+        perror("Memory allocation failed");
+        exit(1);
+  }
 
   int numOfChildren=atoi(argv[1]) , sz , status , i , fd;
   pid_t cpid , pids[numOfChildren];
   char buf[30];
+
+  children = (struct Child *)malloc(numOfChildren * sizeof(struct Child));
+
+  // set allchildren xtatus that they are available for a job
+  for(i=0;i<numOfChildren;i++){
+    children[i].isAvailable=1;
+  }
+
 
   //pipes
   int pipefds1[2], pipefds2[2];
@@ -50,9 +56,6 @@ int main(int argc,char** argv){
       printf("Error Number % d\n", errno);
       perror("Program\n");
   }
-
-  // sprintf(buf, "Parent process : %d\n", getpid());
-  // sz = write(fd, buf, strlen(buf));
 
   //Parent process creates multiple child process
   for(i=0;i<numOfChildren;i++){
@@ -75,8 +78,14 @@ int main(int argc,char** argv){
       exit(EXIT_FAILURE);
     }
     else if (pids[i]==0){ //Child process
+      signal(SIGINT,(void(*)(int))onSIGTERM);
       //when i set the struct: i will be able to choose  and handle if a process is working to give the job to another process
-      childJob(pipefds1,pipefds2,fd);
+      //get children pid and save it to the struct , set also the new status to 0 unavailable, and set te function that it has to execute
+      children[i].childPID=getpid();
+      children[i].isAvailable=0;
+      children[i].func=&childJob;
+      children[i].func(pipefds1,pipefds2,fd);
+      children[i].isAvailable=1;
     }
     else if(pids[i]!=0){ //parent process
       close(pipefds1[0]); // Close the unwanted pipe1 read side
@@ -94,6 +103,7 @@ int main(int argc,char** argv){
 
   //parent waits the n childs to end
   for(i=0;i<numOfChildren;i++){
+    signal(SIGKILL,(void(*)(int))killChild);
     cpid = waitpid(-1, &status, 0);
     if (WIFEXITED(status)){ //child ended properly
         printf("Child ended normally. Exit code is %d\n",WEXITSTATUS(status));
@@ -101,15 +111,24 @@ int main(int argc,char** argv){
         printf("Child ended because of an uncaught signal, signal = %d\n",WTERMSIG(status));
     }else if (WIFSTOPPED(status)){ //child stopped
         printf("Child process has stopped, signal code = %d\n",WSTOPSIG(status));
-        // exit(EXIT_SUCCESS);
     }
   }
+  // exit(EXIT_SUCCESS);
   close(fd);
   return 0;
 }
 
+void killChild(int sig){
+  kill(-1,SIGINT);
+}
 
-void childJob(int pipefds1[2],int pipefds2[2],int fd){
+void onSIGTERM(int sig){
+  printf("\nI am a child and my father just terminated me!");
+  exit(0);
+}
+
+
+void childJob(int *pipefds1,int *pipefds2,int fd){
   char pipe2writemessage[70] = "Done";
   char readmessage[70];
   close(pipefds1[1]); // Close the unwanted pipe1 write side
@@ -120,19 +139,19 @@ void childJob(int pipefds1[2],int pipefds2[2],int fd){
   //writing to file
   char * token = strtok(readmessage, " ");
   // printf( " %s\n", token[10] ); //printing the token
-  char childName[10];
+  char childName[30];
   int i;
   while( token != NULL ) {
       sprintf(childName,"%s",token);
       token = strtok(NULL, " ");
       i++;
   }
-  char buf[30];
+  char buf[50];
   sprintf(buf, "<%d> -> %s\n", getpid(),childName);
   int sz = write(fd, buf, strlen(buf));
   //writing back to father
   printf("Process: %d -> In Child: Writing to parent – Message is %s\n", getpid() ,pipe2writemessage);
   write(pipefds2[1], pipe2writemessage, sizeof(pipe2writemessage));
-  //TODO random sleep time
+  sleep(2);
   exit(EXIT_SUCCESS);
 }
