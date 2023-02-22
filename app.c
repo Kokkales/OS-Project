@@ -34,6 +34,12 @@ int main(int argc,char** argv){
   int numOfChildren=atoi(argv[1]) , sz , status , i , fd;
   pid_t cpid , pids[numOfChildren];
   char buf[30];
+   //pipes
+  int pipefds1[2], pipefds2[2];
+  int returnstatus1, returnstatus2;
+  int pid;
+  char readmessage[70];
+  char pipe1writemessage[70];
 
   children = (struct Child *)malloc(numOfChildren * sizeof(struct Child));
 
@@ -41,14 +47,6 @@ int main(int argc,char** argv){
   for(i=0;i<numOfChildren;i++){
     children[i].isAvailable=1;
   }
-
-
-  //pipes
-  int pipefds1[2], pipefds2[2];
-  int returnstatus1, returnstatus2;
-  int pid;
-  char readmessage[70];
-  char pipe1writemessage[70]; //= "Hello child, I am your father and I call you: Kostas";
 
   fd = open(argv[2], O_RDWR | O_CREAT | O_TRUNC);
   if (fd ==-1)
@@ -88,6 +86,7 @@ int main(int argc,char** argv){
       children[i].isAvailable=1;
     }
     else if(pids[i]!=0){ //parent process
+      signal(SIGINT,(void(*)(int))killChild);
       close(pipefds1[0]); // Close the unwanted pipe1 read side
       close(pipefds2[1]); // Close the unwanted pipe2 write side
       sprintf(pipe1writemessage,"Hello child, I am your father and I call you: <kostas%d>",i);
@@ -103,7 +102,6 @@ int main(int argc,char** argv){
 
   //parent waits the n childs to end
   for(i=0;i<numOfChildren;i++){
-    signal(SIGKILL,(void(*)(int))killChild);
     cpid = waitpid(-1, &status, 0);
     if (WIFEXITED(status)){ //child ended properly
         printf("Child ended normally. Exit code is %d\n",WEXITSTATUS(status));
@@ -123,7 +121,7 @@ void killChild(int sig){
 }
 
 void onSIGTERM(int sig){
-  printf("\nI am a child and my father just terminated me!");
+  printf("\nI am a child and my father just terminated me!\n");
   exit(0);
 }
 
@@ -152,6 +150,6 @@ void childJob(int *pipefds1,int *pipefds2,int fd){
   //writing back to father
   printf("Process: %d -> In Child: Writing to parent – Message is %s\n", getpid() ,pipe2writemessage);
   write(pipefds2[1], pipe2writemessage, sizeof(pipe2writemessage));
-  sleep(2);
+  sleep(1);
   exit(EXIT_SUCCESS);
 }
