@@ -77,6 +77,7 @@ int main(int argc,char** argv){
     }
     else if (pids[i]==0){ //Child process
       signal(SIGINT,(void(*)(int))onSIGTERM);
+
       //when i set the struct: i will be able to choose  and handle if a process is working to give the job to another process
       //get children pid and save it to the struct , set also the new status to 0 unavailable, and set te function that it has to execute
       children[i].childPID=getpid();
@@ -84,12 +85,13 @@ int main(int argc,char** argv){
       children[i].func=&childJob;
       children[i].func(pipefds1,pipefds2,fd);
       children[i].isAvailable=1;
-    }
+      }
     else if(pids[i]!=0){ //parent process
       signal(SIGINT,(void(*)(int))killChild);
+
       close(pipefds1[0]); // Close the unwanted pipe1 read side
       close(pipefds2[1]); // Close the unwanted pipe2 write side
-      sprintf(pipe1writemessage,"Hello child, I am your father and I call you: <kostas%d>",i);
+      sprintf(pipe1writemessage,"Hello child, I am your father and I call you: <kostas%d>/%d",i,i*2);
       printf("Process: %d -> In Parent: Writing to child – Message is %s\n", getpid() ,pipe1writemessage);
       write(pipefds1[1], pipe1writemessage, sizeof(pipe1writemessage));
       read(pipefds2[0], readmessage, sizeof(readmessage));
@@ -110,6 +112,7 @@ int main(int argc,char** argv){
     }else if (WIFSTOPPED(status)){ //child stopped
         printf("Child process has stopped, signal code = %d\n",WSTOPSIG(status));
     }
+
   }
   // exit(EXIT_SUCCESS);
   close(fd);
@@ -138,6 +141,7 @@ void childJob(int *pipefds1,int *pipefds2,int fd){
   char * token = strtok(readmessage, " ");
   // printf( " %s\n", token[10] ); //printing the token
   char childName[30];
+  char childSleep[30];
   int i;
   while( token != NULL ) {
       sprintf(childName,"%s",token);
@@ -145,11 +149,26 @@ void childJob(int *pipefds1,int *pipefds2,int fd){
       i++;
   }
   char buf[50];
+  printf("Child name: %s\n",childName);
+
+  char * tokenTwo = strtok(childName, "/");
+  char s[2]="/";
+  i=0;
+  while( tokenTwo != NULL ) {
+      sprintf(childSleep,"%s",tokenTwo);
+      // printf("My sleep token: %s\n",tokenTwo);
+      tokenTwo = strtok(NULL, s);
+      i++;
+  }
+
+  int sleepTime=atoi(childSleep);
+
   sprintf(buf, "<%d> -> %s\n", getpid(),childName);
   int sz = write(fd, buf, strlen(buf));
   //writing back to father
   printf("Process: %d -> In Child: Writing to parent – Message is %s\n", getpid() ,pipe2writemessage);
   write(pipefds2[1], pipe2writemessage, sizeof(pipe2writemessage));
-  sleep(1);
+  // printf("My sleep time: %d\n", sleepTime);
+  sleep(sleepTime);
   exit(EXIT_SUCCESS);
 }
