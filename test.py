@@ -1,7 +1,6 @@
 import re
 import os
 import random
-import colorama
 from colorama import Fore
 
 # compile the program

@@ -9,8 +9,6 @@
 #include <time.h>
 #include <signal.h>
 
-//TODO 4. add signal handling and correct termination of the children
-
 
 //I create a struct that saves the PID,the status and the function that executes so now i can handle which child will be executed
 struct Child{
