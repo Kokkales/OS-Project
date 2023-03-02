@@ -6,7 +6,7 @@ RUN apt-get -y install manpages-dev
 COPY . /ipcApp
 WORKDIR /ipcApp/
 RUN gcc -o app app.c
-CMD ["./app","3","Kostas.txt"]
+CMD ["./app","3","test.txt"]
 
 # docker build -t final .
 # docker run -it final
